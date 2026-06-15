@@ -44,7 +44,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          package_json_path: ./package.json
+          package_json_file: ./package.json
           run_install: false
 
       - name: Setup Go
@@ -75,6 +75,8 @@ jobs:
 
 
       - name: Create Pull Request
+        id: create_pr
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -96,3 +98,10 @@ jobs:
           labels: |
             dependencies
             automated-pr
+
+      - name: Report manual PR fallback
+        if: steps.create_pr.outcome == 'failure'
+        run: |
+          echo "⚠️ Automatic PR creation failed (likely due repository-level Actions permissions)." >> "$GITHUB_STEP_SUMMARY"
+          echo "A branch was still pushed: \`chore/upgrade-hugoblox-${{ github.run_id }}\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "Please open a PR manually from that branch." >> "$GITHUB_STEP_SUMMARY"
